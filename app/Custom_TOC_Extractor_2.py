@@ -4,62 +4,14 @@ from PyPDF2 import PdfReader  # noqa: F401
 import os
 import glob
 
-def group_words_into_lines(words):
-    # Sort words by their vertical (top) position first, then by horizontal (x0) position
-    words = sorted(words, key=lambda w: (w['top'], w['x0']))
-
-    lines = []
-    current_line = []
-    last_top = None
-    last_x1 = None  # Track the rightmost position of the previous word (x1)
-
-    for word in words:
-        word_top = word['top']
-        word_x0 = word['x0']  # Left boundary of the word
-        word_text = word['text']
-
-        # If it's a new line (significant change in Y-coordinate), start a new line
-        if last_top is not None and abs(word_top - last_top) > 5:
-            # Join words in the current line into a string and add to lines
-            lines.append(' '.join([w['text'] for w in current_line]))
-            current_line = []
-            last_x1 = None  # Reset last_x1 for the new line
-
-        # If this word is very close to the previous word horizontally, merge them without space
-        if last_x1 is not None and abs(word_x0 - last_x1) < 2:  # Only merge if the words are VERY close
-            current_line[-1]['text'] += word_text
-        else:
-            # Otherwise, add the word as a new entry in the current line with a space between words
-            current_line.append(word)
-
-        # Update the tracking variables
-        last_top = word_top
-        last_x1 = word['x1']  # Right boundary of the word
-
-    # Append the last line if there are remaining words
-    if current_line:
-        lines.append(' '.join([w['text'] for w in current_line]))
-
-    return lines
-
-# Function to extract text from each page of the PDF
 def extract_text_pages(pdf_path):
     text_pages = []
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
-            # Extract words instead of full lines to avoid broken words across lines
-            words = page.extract_words()
-            
-            # Manually combine words into lines based on their positions
-            lines = group_words_into_lines(words)
-            
-            # Join the lines back into text, simulating the page text
-            text = '\n'.join(lines)
+            # Extract the full text from each page without processing each word individually
+            text = page.extract_text()
             text_pages.append(text)
     return text_pages
-
-
-
 
 # Function to parse TOC line using regular expressions
 def parse_toc_line(line, next_line=None):
@@ -132,8 +84,8 @@ def extract_toc_entries(text_content):
 
     i = 0
     while i < len(lines):
-        line = lines[i].strip()
-        next_line = lines[i+1].strip() if i+1 < len(lines) else None
+        line = re.sub(r'[○\s]+', ' ', lines[i].strip())
+        next_line = re.sub(r'[○\s]+', ' ', lines[i+1].strip()) if i+1 < len(lines) else None
 
         if not toc_started:
             if any(phrase in line for phrase in toc_phrases):

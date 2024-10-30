@@ -14,17 +14,23 @@ def extract_toc_entries_clean(text_content):
     toc_start_index = None
     lines = text_content.split('\n')
     
-    # Step 1: Join split lines to address cases like "C" + "ontents"
+    # Step 1: Detect split TOC title lines and combine them
     joined_lines = []
     i = 0
     while i < len(lines):
         line = lines[i].strip()
         
-        # Detect and combine split words
-        if i + 1 < len(lines) and lines[i + 1].strip().islower():
-            line += lines[i + 1].strip()  # Join with next line
-            i += 1  # Skip the next line as it's now part of the current line
-        
+        # Check if line is part of TOC title and combine if split
+        if any(phrase.startswith(line) for phrase in toc_phrases):
+            # Attempt to combine with the next line if it appears to be split
+            next_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
+            combined_line = f"{line}{next_line}"
+            if any(phrase in combined_line for phrase in toc_phrases):
+                line = combined_line
+                i += 1  # Skip the next line as it was combined
+
+        # Normalize spaces in lines with symbols or redundant characters
+        line = re.sub(r'[○\s]+', ' ', line)
         joined_lines.append(line)
         i += 1
     

@@ -113,7 +113,7 @@ def final_process_pdfs(data_folder, output_folder, header_height=70, footer_heig
             with open(toc_file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             line_count = len(lines)
-            if line_count <= 30:
+            if line_count <= 25:
                 # Extract the corresponding PDF filename
                 pdf_filename = os.path.splitext(os.path.basename(toc_file))[0] + '.pdf'
                 if pdf_filename not in failed_pdfs:
