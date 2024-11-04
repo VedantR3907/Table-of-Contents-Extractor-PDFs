@@ -134,7 +134,7 @@ def process_file(file_path, log_file):
 
         # Evaluate the non-numbered block based on line count and word average
         if non_numbering_counter >= 5:
-            total_words = sum(len(re.findall(r'\w+', l)) for l in sequence_lines)
+            total_words = sum(len(re.findall(r'\w+', l)) for l in sequence_lines)  # noqa: E741
             average_words = total_words / non_numbering_counter
             log_file.write(f"Non-numbered block identified (Average words: {average_words}):\n{''.join(sequence_lines)}\n")
 
