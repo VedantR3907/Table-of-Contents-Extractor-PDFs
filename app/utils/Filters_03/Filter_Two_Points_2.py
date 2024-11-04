@@ -63,7 +63,7 @@ def is_only_decimal_numbers(line):
 
 def process_file(file_path, log_file):
     with open(file_path, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
+        lines = f.readlines()[:1000]
 
     processed_lines = []
     i = 0
@@ -138,9 +138,12 @@ def process_file(file_path, log_file):
             average_words = total_words / non_numbering_counter
             log_file.write(f"Non-numbered block identified (Average words: {average_words}):\n{''.join(sequence_lines)}\n")
 
-            if average_words > 6:
-                log_file.write(f"Block removed due to high average words.\n")
+            if average_words < 7 and non_numbering_counter >= 50:
+                log_file.write("Block removed due to line count >= 50 with low average words.\n")
                 # Do not add to processed_lines (effectively removing the block)
+                continue
+            elif average_words > 6:
+                log_file.write("Block removed due to high average words.\n")
                 continue
             else:
                 log_file.write(f"Block kept:\n{''.join(sequence_lines)}\n")

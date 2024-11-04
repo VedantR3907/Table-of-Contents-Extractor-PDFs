@@ -28,7 +28,11 @@ def extract_toc_entries_clean(text_content):
             if any(phrase in combined_line for phrase in toc_phrases):
                 line = combined_line
                 i += 1  # Skip the next line as it was combined
-
+        elif "ontents" in line and i + 1 < len(lines) and lines[i + 1].strip() == "C":
+            # Handle the case where "ontents" is on one line and "C" on the next
+            line = lines[i + 1].strip() + line  # Combine "C" + "ontents" to form "Contents"
+            i += 1  # Skip the next line as it was combined
+            
         # Normalize spaces in lines with symbols or redundant characters
         line = re.sub(r'[○\s]+', ' ', line)
         joined_lines.append(line)

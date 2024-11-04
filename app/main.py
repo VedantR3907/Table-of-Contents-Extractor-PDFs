@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import glob
 from Fitz_TOC_Extractor_1 import process_pdfs as process_manual_toc
@@ -27,6 +28,29 @@ def extract_text_from_failed_pdfs(failed_pdfs_folder, extracted_output_folder):
         print(f"Extracted content from {pdf_file} and saved to {text_output_path}")
     
     print("#" * 100)
+
+def check_for_numbered_lines(toc_file):
+    """Check if there are at least 50 consecutive lines that contain numbers and not words."""
+    with open(toc_file, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        
+    numbered_line_count = 0
+
+    for line in lines:
+        line = line.strip()
+        
+        # Use regex to check if line contains at least one digit and no letters
+        if re.search(r'\d', line) and not re.search(r'[a-zA-Z]', line):
+            numbered_line_count += 1
+
+            # If we hit 50 numbered lines, return True
+            if numbered_line_count >= 50:
+                return True
+        else:
+            numbered_line_count = 0  # Reset if line contains letters or no digits
+            
+    return False
+
 
 def create_final_output(output_folder):
     # Define folder paths
@@ -119,6 +143,11 @@ def final_process_pdfs(data_folder, output_folder, header_height=70, footer_heig
                 if pdf_filename not in failed_pdfs:
                     failed_pdfs.add(pdf_filename)
                     print(f"\nAdded '{pdf_filename}' to failed PDFs due to TOC line count <= 30.")
+            elif check_for_numbered_lines(toc_file):
+                pdf_filename = os.path.splitext(os.path.basename(toc_file))[0] + '.pdf'
+                if pdf_filename not in failed_pdfs:
+                    failed_pdfs.add(pdf_filename)
+                    print(f"\nAdded '{pdf_filename}' to failed PDFs due to 50 consecutive numbered lines.")
         except Exception as e:
             print(f"Error reading '{toc_file}': {e}")
             # Optionally, add to failed_pdfs if TOC file can't be read
