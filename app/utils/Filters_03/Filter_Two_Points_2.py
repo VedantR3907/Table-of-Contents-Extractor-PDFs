@@ -142,7 +142,7 @@ def process_file(file_path, log_file):
                 log_file.write("Block removed due to line count >= 50 with low average words.\n")
                 # Do not add to processed_lines (effectively removing the block)
                 continue
-            elif average_words > 6:
+            elif average_words > 6.54:
                 log_file.write("Block removed due to high average words.\n")
                 continue
             else:
