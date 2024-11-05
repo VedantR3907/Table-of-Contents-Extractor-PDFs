@@ -7,6 +7,7 @@ SCRIPT_DIR = os.path.join("utils", "Filters_03")
 SCRIPT_1 = "Filter_from_2nd_method_1.py"
 SCRIPT_2 = "Filter_Two_Points_2.py"
 SCRIPT_3 = "Filter_Structure_TOC_3.py"
+SCRIPT_4 = "Filter_Remove_Extra_Text_4.py"  # New script
 
 def run_script(script_name):
     """Function to change to SCRIPT_DIR and run a script by name"""
@@ -37,6 +38,10 @@ def filtering_main_3():
     # Step 3: Run Filter_Structure_TOC_3.py
     output_script_3 = run_script(SCRIPT_3)
     table_data.append(["Step 3: Filter_Structure_TOC_3.py", output_script_3])
+
+    # Step 4: Run Filter_Remove_Extra_Text.py
+    output_script_4 = run_script(SCRIPT_4)
+    table_data.append(["Step 4: Filter_Remove_Extra_Text.py", output_script_4])
 
     print(tabulate(table_data, headers=["Script", "Output"], tablefmt="fancy_grid"))
     print("All scripts have been run successfully.")

@@ -76,6 +76,8 @@ def extract_toc_entries(text_content):
     toc_text = text_content[toc_start_index:]
     lines = toc_text.split('\n')
 
+    lines = lines[:700]
+
     toc_entries = []
     toc_started = False
     non_match_count = 0
@@ -185,6 +187,8 @@ def process_txt_files_in_directory(directory):
 
         with open(txt_file, 'r', encoding='utf-8') as f:
             text_content = f.read()
+
+        text_content = '\n'.join(text_content.splitlines()[:700])
 
         toc_entries = extract_toc_entries(text_content)
 

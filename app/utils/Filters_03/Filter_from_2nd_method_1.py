@@ -13,6 +13,7 @@ def extract_toc_entries_clean(text_content):
     toc_phrases = ["Table of Contents", "Contents", "Index", "CONTENTS"]
     toc_start_index = None
     lines = text_content.split('\n')
+    lines = lines[:700]
     
     # Step 1: Detect split TOC title lines and combine them
     joined_lines = []
@@ -96,6 +97,8 @@ if __name__ == "__main__":
 
         with open(extracted_file_path, 'r', encoding='utf-8') as f:
             text_content = f.read()
+        
+        text_content = '\n'.join(text_content.splitlines()[:700])
 
         toc_entries = extract_toc_entries_clean(text_content)
 

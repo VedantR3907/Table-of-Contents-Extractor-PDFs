@@ -54,7 +54,7 @@ def check_for_numbered_lines(toc_file):
 
 def create_final_output(output_folder):
     # Define folder paths
-    folder_03 = os.path.join(output_folder, 'Filters_03', '03')
+    folder_03 = os.path.join(output_folder, 'Filters_03', '04')
     folder_02 = os.path.join(output_folder, '02')
     folder_01 = os.path.join(output_folder, '01')
     final_output_folder = os.path.join(output_folder, 'Final_Output')
