@@ -1,75 +1,110 @@
 import glob
 import os
 import re
-
+import logging
 # Define paths relative to the project root directory
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 TXT_DIRECTORY = os.path.join(ROOT_DIR, 'Output', '02')
 EXTRACTED_DIRECTORY = os.path.join(ROOT_DIR, 'Output', 'extracted_content')
 OUTPUT_DIR = os.path.join(ROOT_DIR, 'Output', 'Filters_03', '01')
-
+# Set up logging configuration to write to both console and log file
+LOG_FILE = os.path.join(OUTPUT_DIR, "toc_extraction.log")
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE, mode='w', encoding='utf-8')  # Write logs to a file only
+    ]
+)
 # Function to extract TOC entries
 def extract_toc_entries_clean(text_content):
-    toc_phrases = ["Table of Contents", "Contents", "Index", "CONTENTS"]
+    toc_phrases = ["Table of Contents", "Contents", "CONTENTS"]
+    # Compile regex patterns for exact or start-of-line matching
+    toc_patterns = [re.compile(rf'^{re.escape(phrase)}\b', re.IGNORECASE) for phrase in toc_phrases]
+    
     toc_start_index = None
     lines = text_content.split('\n')
-    lines = lines[:700]
+    lines = lines[:700]  # Limit to first 700 lines for efficiency
     
+    logging.info("Processing the first 700 lines of the text content.")
+
     # Step 1: Detect split TOC title lines and combine them
     joined_lines = []
     i = 0
     while i < len(lines):
         line = lines[i].strip()
         
-        # Check if line is part of TOC title and combine if split
-        if any(phrase.startswith(line) for phrase in toc_phrases):
+        # Check if line matches any TOC phrase using regex
+        if any(pattern.match(line) for pattern in toc_patterns):
             # Attempt to combine with the next line if it appears to be split
             next_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
-            combined_line = f"{line}{next_line}"
-            if any(phrase in combined_line for phrase in toc_phrases):
+            combined_line = f"{line} {next_line}" if next_line else line
+            if any(pattern.match(combined_line) for pattern in toc_patterns):
                 line = combined_line
                 i += 1  # Skip the next line as it was combined
-        elif "ontents" in line and i + 1 < len(lines) and lines[i + 1].strip() == "C":
-            # Handle the case where "ontents" is on one line and "C" on the next
-            line = lines[i + 1].strip() + line  # Combine "C" + "ontents" to form "Contents"
+        
+        # Handle the case where "ontents" is on one line and "C" on the next
+        elif "ontents" in line.lower() and i + 1 < len(lines) and lines[i + 1].strip().upper() == "C":
+            # Combine "C" + "ontents" to form "Contents"
+            line = lines[i + 1].strip() + line
             i += 1  # Skip the next line as it was combined
-            
+        
+        # Handle the case where "C" is on one line and "ontents" is on the next
+        elif line.strip().upper() == "C" and i + 1 < len(lines) and "ontents" in lines[i + 1].strip().lower():
+            # Combine "C" + "ontents" to form "Contents"
+            line = line + lines[i + 1].strip()
+            i += 1  # Skip the next line as it was combined
+        
         # Normalize spaces in lines with symbols or redundant characters
         line = re.sub(r'[○\s]+', ' ', line)
         joined_lines.append(line)
+        logging.debug(f"Processed and combined line {i}: {line}")
         i += 1
-    
+
+    logging.info("Finished joining split lines in the text content.")
+
     # Step 2: Look for TOC start using enhanced matching
     for i, line in enumerate(joined_lines):
         line = line.strip()
-        # Check for exact or partial match with any toc_phrase
-        if any(phrase in line for phrase in toc_phrases):
+        logging.debug(f"Checking for TOC title at line {i}: {line}")
+        if any(pattern.match(line) for pattern in toc_patterns):
             toc_start_index = i
+            logging.info(f"TOC start detected at line {i}: {line}")
             break
 
     if toc_start_index is None:
+        logging.warning("No TOC title found in the text.")
         return []
 
-    # Process TOC entries from the identified start point
-    toc_lines = joined_lines[toc_start_index:]
+    toc_lines = joined_lines[toc_start_index:]  # Start from the TOC title
     toc_entries = []
-    i = 0
 
-    while i < len(toc_lines):
+    def count_valid_words(line):
+        valid_words = [token for token in line.split() if token.isalnum() or re.match(r'^\d+(\.\d+)*$', token)]
+        logging.debug(f"Counted {len(valid_words)} valid words in line: {line}")
+        return len(valid_words)
+
+    for i in range(len(toc_lines)):
         line = toc_lines[i].strip()
-        # Define valid lines that aren’t page numbers or headings
-        valid_lines = [
-            toc_lines[j] for j in range(i, min(i + 5, len(toc_lines)))
-            if not re.match(r'^(\d+|[IVXLCDM]+|\d+(\.\d+)+)', toc_lines[j].strip(), re.IGNORECASE)
-        ]
-        if sum(len(valid_line.split()) > 10 for valid_line in valid_lines) >= 3:
+        logging.debug(f"Processing line {i}: '{line}'")
+
+        next_five_lines = toc_lines[i:i + 5]
+        long_lines_count = sum(1 for l in next_five_lines if count_valid_words(l) > 10)
+        logging.debug(f"Next 5 lines from line {i}: {[l.strip() for l in next_five_lines]}")
+        logging.debug(f"Number of 'long' lines in the next 5: {long_lines_count}")
+
+        if long_lines_count >= 3:
+            logging.info(f"Condition met at line {i}: 3 out of 5 lines have more than 10 words.")
+            logging.info(f"Including the 5 lines that triggered the condition in the output.")
+            toc_entries.extend({'heading': l, 'page_number': None} for l in next_five_lines if l.strip())
+            logging.info("Stopping further processing.")
             break
 
         if line:
             toc_entries.append({'heading': line, 'page_number': None})
+            logging.info(f"Added TOC entry: {line}")
 
-        i += 1
-
+    logging.info(f"TOC extraction completed. {len(toc_entries)} entries found.")
     return toc_entries
 
 def filter_files_by_line_count(folder_path, max_lines=20):

@@ -3,8 +3,8 @@ import re
 
 # Define paths
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-INPUT_FOLDER = os.path.join(ROOT_DIR, 'Output', 'Filters_03', '02')
-OUTPUT_FOLDER = os.path.join(ROOT_DIR, 'Output', 'Filters_03', '03')
+INPUT_FOLDER = os.path.join(ROOT_DIR, 'Output', 'Filters_03', '03')
+OUTPUT_FOLDER = os.path.join(ROOT_DIR, 'Output', 'Filters_03', '04')
 
 def extract_clean_toc(text):
     toc_start_phrases = ["Table of Contents", "Contents", "CONTENTS", "Index"]

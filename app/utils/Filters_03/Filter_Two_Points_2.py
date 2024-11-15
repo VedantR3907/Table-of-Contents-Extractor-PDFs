@@ -12,7 +12,7 @@ def is_numbering(line):
         r'^\s*\d+(\s|[\.\):])',
         r'^\s*\d+\.\d+',
         r'^\s*[IVXLCDM]+(\s|[\.\):])',
-        r'^\s*[•\-–—]\s',
+        r'^\s*[\u2022\-\u2013\u2014]\s',
         r'^\s*\([a-zA-Z0-9]+\)',
         r'^\s*[a-zA-Z]\)',
         r'^\s*(Chapter|Part|Act)\s+\d+.*',
@@ -28,11 +28,8 @@ def has_ending_number_or_range(line):
     Check if the line ends with a number or a number range (e.g., "3-7").
     Exclude lines that resemble addresses by ensuring the number isn't part of a postal code or similar.
     """
-    # Regex to match lines ending with a number or number range
     match = re.search(r'\b\d+(-\d+)?$', line)
     if match:
-        # Further check to exclude postal codes or similar patterns (e.g., 380 015)
-        # Assuming postal codes are exactly 6 digits possibly separated by a space
         if re.search(r'\b\d{3}\s*\d{3}$', line):
             return False
         return True
@@ -61,6 +58,15 @@ def is_only_decimal_numbers(line):
     """
     return bool(re.match(r'^(\d+\.\d+|\d+-\d+)(\s+(\d+\.\d+|\d+-\d+))*$', line))
 
+def contains_reset_keyword(line):
+    """
+    Check if the line contains any of the specified keywords that should reset the counter.
+    Keywords: Index, Acknowledgements, Acknowledgement, Introduction, Appendix
+    """
+    reset_keywords = ['Index', 'Acknowledgements', 'Acknowledgement', 'Introduction', 'Appendix', 'Conclusion', 'Conclusions']
+    pattern = r'\b(' + '|'.join(reset_keywords) + r')\b'
+    return bool(re.search(pattern, line, re.IGNORECASE))
+
 def process_file(file_path, log_file):
     with open(file_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()[:1000]
@@ -68,11 +74,29 @@ def process_file(file_path, log_file):
     processed_lines = []
     i = 0
     consecutive_dotted_lines = 0
+    toc_found = False  # Flag to indicate if TOC phrase is found
+    skip_lines_after_toc = 0
 
     while i < len(lines):
         original_line = lines[i].strip()
-        # Clean up repetitive symbols like ○ and excessive whitespace
-        line = re.sub(r'[○\s]+', ' ', original_line)
+        line = re.sub(r'[\u25CB\s]+', ' ', original_line)
+
+        # Check for TOC phrase
+        if not toc_found and re.search(r'\b(Table of Contents|Contents)\b', line, re.IGNORECASE):
+            log_file.write(f"TOC phrase found at line {i+1}: {line}\n")
+            toc_found = True
+            skip_lines_after_toc = 5
+            processed_lines.append(line + '\n')  # Add TOC line to output
+            i += 1
+            continue
+
+        # Skip lines after the TOC phrase
+        if skip_lines_after_toc > 0:
+            log_file.write(f"Skipping line {i+1} after TOC (counter not applied): {line}\n")
+            processed_lines.append(line + '\n')  # Add skipped lines to output
+            skip_lines_after_toc -= 1
+            i += 1
+            continue
 
         # Skip lines that are only symbols or only decimal numbers
         if is_only_symbols(line):
@@ -93,13 +117,20 @@ def process_file(file_path, log_file):
             log_file.write(f"Consecutive lines with dots detected starting from line {i - 4}.\n")
 
             while i < len(lines):
-                dotted_line = re.sub(r'[○\s]+', ' ', lines[i].strip())
+                dotted_line = re.sub(r'[\u25CB\s]+', ' ', lines[i].strip())
                 if not contains_dots_sequence(dotted_line):
                     log_file.write(f"Non-dotted line encountered below dotted lines: {dotted_line}\n")
                 else:
                     processed_lines.append(dotted_line + '\n')
                 i += 1
             consecutive_dotted_lines = 0
+            continue
+
+        # **New condition: Check for reset keywords**
+        if contains_reset_keyword(line):
+            log_file.write(f"Reset keyword found at line {i+1}: {line}\n")
+            processed_lines.append(line + '\n')
+            i += 1
             continue
 
         if has_ending_number_or_range(line) or is_numbering(line):
@@ -113,11 +144,18 @@ def process_file(file_path, log_file):
 
         while i < len(lines):
             current_line_original = lines[i].strip()
-            current_line = re.sub(r'[○\s]+', ' ', current_line_original)
+            current_line = re.sub(r'[\u25CB\s]+', ' ', current_line_original)
+
+            # **Check for reset keywords within sequence**
+            if contains_reset_keyword(current_line):
+                log_file.write(f"Reset keyword found within sequence at line {i+1}: {current_line}\n")
+                processed_lines.append(current_line + '\n')
+                i += 1
+                break
+
             if is_numbering(current_line) or has_ending_number_or_range(current_line):
                 break
 
-            # Skip lines that are only symbols or only decimal numbers within the sequence
             if is_only_symbols(current_line):
                 log_file.write(f"Skipped line within sequence (only symbols): {current_line}\n")
                 i += 1
@@ -132,17 +170,15 @@ def process_file(file_path, log_file):
             log_file.write(f"Continuing counter at line {i+1}: {current_line} -------> counter {non_numbering_counter}\n")
             i += 1
 
-        # Evaluate the non-numbered block based on line count and word average
         if non_numbering_counter >= 5:
             total_words = sum(len(re.findall(r'\w+', l)) for l in sequence_lines)  # noqa: E741
             average_words = total_words / non_numbering_counter
             log_file.write(f"Non-numbered block identified (Average words: {average_words}):\n{''.join(sequence_lines)}\n")
 
-            if average_words < 7 and non_numbering_counter >= 50:
+            if average_words < 6.8 and non_numbering_counter >= 50:
                 log_file.write("Block removed due to line count >= 50 with low average words.\n")
-                # Do not add to processed_lines (effectively removing the block)
                 continue
-            elif average_words > 6.54:
+            elif average_words > 6.8:
                 log_file.write("Block removed due to high average words.\n")
                 continue
             else:
