@@ -67,7 +67,7 @@ def extract_text_from_failed_pdfs(failed_pdfs_folder, extracted_output_folder):
     failed = total_pdfs - successful
     
     print("\n", "#"*70)
-    print(f"\nProcessing Summary:")
+    print("\nProcessing Summary:")
     print(f"- Successfully processed: {successful} PDFs")
     print(f"- Failed to process: {failed} PDFs")
     print("#" * 70)
