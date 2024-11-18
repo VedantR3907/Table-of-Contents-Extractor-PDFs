@@ -4,7 +4,6 @@ import re
 from rich.console import Console
 from rich.table import Table
 from rich import box
-from datetime import datetime
 
 def extract_pdf_toc(pdf_path):
     doc = fitz.open(pdf_path)
