@@ -230,15 +230,21 @@ def extract_headings_from_text(text_pages):
     return headings
 
 # Main function to extract TOC and text from PDFs
-def extract_pdf_toc(pdf_path):
-    text_pages = extract_text_pages(pdf_path)
-    toc_entries = extract_toc_entries(text_pages)
+def extract_pdf_toc(pdf_path, extracted_output_folder, progress_queue):
+    text_pages = []
+    # Call extract_text_from_pdf for text extraction
+    success, filename = extract_text_from_pdf(pdf_path, extracted_output_folder, progress_queue)
+    
+    if success:
+        text_output_path = os.path.join(extracted_output_folder, f'{filename}.txt')
+        with open(text_output_path, 'r', encoding='utf-8') as f:
+            text_pages = f.readlines()
+    else:
+        print(f"Failed to extract text from {pdf_path}.")
+    
+    toc_entries = extract_toc_entries('\n'.join(text_pages))
     if not toc_entries:
         toc_entries = extract_headings_from_text(text_pages)
-
-    # bookmarks = extract_bookmarks(pdf_path)
-    # if bookmarks:
-    #     toc_entries.extend(bookmarks)
 
     unique_entries = {(entry['heading'], entry['page_number']): entry for entry in toc_entries}
     toc_entries = list(unique_entries.values())
@@ -277,40 +283,58 @@ def process_custom_pdfs_directly(pdf_paths, output_base_dir='./output'):
     to the same structure as the primary workflow.
     """
     output_dir_toc = os.path.join(output_base_dir, '02')  # TOC output for custom PDFs
-    content_dir = os.path.join(output_base_dir, 'extracted_content')  # Extracted content directory
+    extracted_output_folder = os.path.join(output_base_dir, 'extracted_content')  # Extracted content directory
 
     os.makedirs(output_dir_toc, exist_ok=True)
-    os.makedirs(content_dir, exist_ok=True)
+    os.makedirs(extracted_output_folder, exist_ok=True)
+
+    progress_queue = queue.Queue()
+    total_pdfs = len(pdf_paths)
+    from threading import Thread
+    progress_thread = Thread(target=progress_monitor, args=(progress_queue, total_pdfs))
+    progress_thread.start()
 
     for pdf_path in pdf_paths:
         filename = os.path.splitext(os.path.basename(pdf_path))[0]
-        
-        print(f"\n**** Processing file: {pdf_path} ****")
-        
-        # Extract text pages and save the content
-        text_pages = extract_text_pages(pdf_path)
-        content_output_path = os.path.join(content_dir, f'{filename}.txt')
-        with open(content_output_path, 'w', encoding='utf-8') as content_file:
-            content_file.write('\n'.join(text_pages))
-        print(f"Extracted content from {pdf_path} saved to {content_output_path}")
-        
-        # Extract TOC entries from the text and save them
-        toc_entries = extract_toc_entries('\n'.join(text_pages))
+
+        # Extract text using the updated extract_text_from_pdf function
+        extract_text_from_pdf(pdf_path, extracted_output_folder, progress_queue)
+
+        # Extract TOC entries
+        text_output_path = os.path.join(extracted_output_folder, f'{filename}.txt')
+        with open(text_output_path, 'r', encoding='utf-8') as content_file:
+            text_content = content_file.read()
+
+        toc_entries = extract_toc_entries(text_content)
+
+        # Save the TOC entries
         toc_output_path = os.path.join(output_dir_toc, f'{filename}.txt')
         with open(toc_output_path, 'w', encoding='utf-8') as toc_file:
             for entry in toc_entries:
                 page_number = entry['page_number'] if entry['page_number'] is not None else ''
                 toc_file.write(f"{entry['heading']} ...... {page_number}\n")
-        
-        print(f"Processed {pdf_path} - TOC saved to {toc_output_path}")
-        print("************************************")
+
+    # Wait for progress monitoring to complete
+    progress_thread.join()
 
 
 # Example usage of the new custom PDF processing function without affecting the main workflow
 if __name__ == "__main__":
-    # Uncomment the line below to process custom PDFs directly
-    # process_custom_pdfs_directly(["./data/Things That Matter- Three Decades of Passions, Pastimes and Politics ( PDFDrive ).pdf"])
+    # List of specific PDF files to process
+    pdf_files = [
+        "./data/robert-kiyosaki-the-real-book-of-real-estate.pdf",  # Replace with your PDF file paths
+        "./data/Master_ Chess Tactics, Chess Openings, and Chess Strategies.pdf",  # Add more file paths as needed
+    ]
 
-    # Retain the main workflow for processing files from the first code file
-    txt_directory = "./output/extracted_content"  # Directory containing text files
-    process_txt_files_in_directory(txt_directory)
+    # Base output directory for extracted content and TOC
+    output_base_dir = "./output"
+
+    if not pdf_files:
+        print("No PDF files provided for processing.")
+    else:
+        print(f"Processing {len(pdf_files)} specific PDF files...")
+
+        # Call the function to process the custom PDF files
+        process_custom_pdfs_directly(pdf_files, output_base_dir)
+
+        print("\nAll specified PDFs processed successfully. Check the output directory for results.")
