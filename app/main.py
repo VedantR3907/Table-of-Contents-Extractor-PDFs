@@ -5,12 +5,16 @@ import glob
 from functools import partial
 import threading
 import multiprocessing as mp
+from rich.console import Console
+from rich.panel import Panel
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from Fitz_TOC_Extractor_1 import process_pdfs as process_manual_toc
 # from custom_function_to_extract_pdf_2 import process_pdfs_in_directory as process_custom_toc
 from Custom_TOC_Extractor_2 import process_txt_files_in_directory, extract_text_from_pdf, progress_monitor
 # from custom_function_to_extract_pdf_21 import process_txt_files_in_directory, extract_text_pages
 from Filtering_Structuring_3 import filtering_main_3
+
+console = Console()
 
 def extract_text_from_failed_pdfs(failed_pdfs_folder, extracted_output_folder):
     os.makedirs(extracted_output_folder, exist_ok=True)
@@ -126,7 +130,9 @@ def create_final_output(output_folder):
             dest_file = os.path.join(final_output_folder, file_name)
             shutil.copy2(src_file, dest_file)
 
-    print("Files have been successfully organized in the Final_Output folder.")
+    console.print(Panel("Output has been saved to the Final_output folder.", 
+                       style="bold green", 
+                       subtitle="Process Complete"))
 
 # Main process function that orchestrates everything
 def final_process_pdfs(data_folder, output_folder, header_height=70, footer_height=50, remove_negative_pages=False):
@@ -229,7 +235,6 @@ def final_process_pdfs(data_folder, output_folder, header_height=70, footer_heig
         filtering_main_3()
     
     create_final_output(output_folder)
-    print("Final output creation is complete.")
 
 # Example usage
 if __name__ == "__main__":
