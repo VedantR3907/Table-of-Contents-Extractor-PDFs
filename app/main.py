@@ -2,32 +2,71 @@ import os
 import re
 import shutil
 import glob
+from functools import partial
+import threading
+import multiprocessing as mp
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from Fitz_TOC_Extractor_1 import process_pdfs as process_manual_toc
 # from custom_function_to_extract_pdf_2 import process_pdfs_in_directory as process_custom_toc
-from Custom_TOC_Extractor_2 import process_txt_files_in_directory, extract_text_pages
+from Custom_TOC_Extractor_2 import process_txt_files_in_directory, extract_text_from_pdf, progress_monitor
 # from custom_function_to_extract_pdf_21 import process_txt_files_in_directory, extract_text_pages
 from Filtering_Structuring_3 import filtering_main_3
 
 def extract_text_from_failed_pdfs(failed_pdfs_folder, extracted_output_folder):
     os.makedirs(extracted_output_folder, exist_ok=True)
     
+    # Get list of PDF files
     pdf_files = glob.glob(os.path.join(failed_pdfs_folder, '*.pdf'))
-
+    
+    if not pdf_files:
+        print("No PDF files found in the specified folder.")
+        return
+    
+    # Create a multiprocessing queue for progress updates
+    manager = mp.Manager()
+    progress_queue = manager.Queue()
+    
+    # Start the progress monitor in a separate thread
+    total_pdfs = len(pdf_files)
+    progress_thread = threading.Thread(
+        target=progress_monitor, 
+        args=(progress_queue, total_pdfs)
+    )
+    progress_thread.start()
+    
     print("\n", "#"*70)
-    print("\n**** Extracting text from failed PDFs ****")
+    print(f"\n**** Extracting text from {total_pdfs} PDFs using {mp.cpu_count()} processes ****\n")
     
-    for pdf_file in pdf_files:
-        filename = os.path.splitext(os.path.basename(pdf_file))[0]
-        text_output_path = os.path.join(extracted_output_folder, f'{filename}.txt')
-        
-        # Extract the text content from the failed PDFs using your existing PDF-to-text extraction logic
-        text_pages = extract_text_pages(pdf_file)
-        with open(text_output_path, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(text_pages))  # Save extracted content to text file
-        
-        print(f"Extracted content from {pdf_file} and saved to {text_output_path}")
+    # Process PDFs in parallel using ProcessPoolExecutor
+    extract_func = partial(extract_text_from_pdf, 
+                         extracted_output_folder=extracted_output_folder,
+                         progress_queue=progress_queue)
     
-    print("#" * 100)
+    results = []
+    with ProcessPoolExecutor(max_workers=mp.cpu_count()) as executor:
+        # Submit all PDF processing jobs
+        future_to_pdf = {
+            executor.submit(extract_func, pdf_file): pdf_file 
+            for pdf_file in pdf_files
+        }
+        
+        # Collect results as they complete
+        for future in as_completed(future_to_pdf):
+            success, filename = future.result()
+            results.append((success, filename))
+    
+    # Wait for progress monitor to finish
+    progress_thread.join()
+    
+    # Print summary
+    successful = sum(1 for success, _ in results if success)
+    failed = total_pdfs - successful
+    
+    print("\n", "#"*70)
+    print(f"\nProcessing Summary:")
+    print(f"- Successfully processed: {successful} PDFs")
+    print(f"- Failed to process: {failed} PDFs")
+    print("#" * 70)
 
 def check_for_numbered_lines(toc_file):
     """Check if there are at least 50 consecutive lines that contain numbers and not words."""
@@ -123,6 +162,7 @@ def final_process_pdfs(data_folder, output_folder, header_height=70, footer_heig
     def manual_toc_callback(pdf_name, toc_status, offset=0):
         """Callback function to track failed TOC extraction results and zero offset cases."""
         if toc_status in ["N/A", "No TOC"]:
+            print ('')
             failed_pdfs.add(pdf_name)
 
     print("Processing PDFs with the manual TOC extractor...")
@@ -156,7 +196,7 @@ def final_process_pdfs(data_folder, output_folder, header_height=70, footer_heig
     
     second_script_ran = False
     if failed_pdfs:
-        print(f"Found {len(failed_pdfs)} PDFs requiring custom processing based on TOC extraction failures or line count condition.")
+        print(f"❌Found {len(failed_pdfs)} failed from first method:", ", ".join(failed_pdfs))
 
         # Copy failed PDFs to the folder for custom processing (don't remove from data folder)
         for failed_pdf in failed_pdfs:

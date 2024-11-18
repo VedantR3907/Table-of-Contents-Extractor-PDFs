@@ -2,16 +2,87 @@ import pdfplumber
 import re
 from PyPDF2 import PdfReader  # noqa: F401
 import os
+import queue
+from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
+from rich.console import Console
 import glob
 
-def extract_text_pages(pdf_path):
-    text_pages = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            # Extract the full text from each page without processing each word individually
-            text = page.extract_text()
-            text_pages.append(text)
-    return text_pages
+def extract_text_from_pdf(pdf_file, extracted_output_folder, progress_queue):
+    try:
+        filename = os.path.splitext(os.path.basename(pdf_file))[0]
+        text_output_path = os.path.join(extracted_output_folder, f'{filename}.txt')
+        
+        # Initialize variables for progress tracking
+        progress_queue.put(('start', filename))
+        
+        text_chunks = []
+        with pdfplumber.open(pdf_file) as pdf:
+            total_pages = len(pdf.pages)
+            
+            # Process pages in batches for better performance
+            batch_size = 5  # Adjust batch size based on your needs
+            for batch_start in range(0, total_pages, batch_size):
+                batch_end = min(batch_start + batch_size, total_pages)
+                batch_pages = pdf.pages[batch_start:batch_end]
+                
+                # Process batch of pages
+                batch_texts = []
+                for page in batch_pages:
+                    # Optimize text extraction settings
+                    text = page.extract_text(x_tolerance=3, y_tolerance=3)
+                    batch_texts.append(text)
+                
+                text_chunks.extend(batch_texts)
+                
+                # Report progress
+                progress = (batch_end / total_pages) * 100
+                progress_queue.put(('progress', filename, progress))
+        
+        # Write all text at once
+        with open(text_output_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(text_chunks))
+        
+        progress_queue.put(('complete', filename))
+        return True, filename
+        
+    except Exception as e:
+        progress_queue.put(('error', filename, str(e)))
+        return False, filename
+
+def progress_monitor(progress_queue, total_pdfs):
+    console = Console()
+
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeRemainingColumn(),
+        expand=True,
+        console=console
+    ) as progress:
+        # Initialize progress bars
+        tasks = {}
+        completed = set()
+        errors = set()
+
+        while len(completed) + len(errors) < total_pdfs:
+            try:
+                msg = progress_queue.get(timeout=1)
+                msg_type = msg[0]
+                filename = msg[1]
+
+                if msg_type == 'start':
+                    tasks[filename] = progress.add_task(f"[cyan]{filename}", total=100)
+                elif msg_type == 'progress':
+                    progress.update(tasks[filename], completed=msg[2])
+                elif msg_type == 'complete':
+                    progress.update(tasks[filename], completed=100)
+                    completed.add(filename)
+                elif msg_type == 'error':
+                    progress.update(tasks[filename], description=f"[red]{filename} - Error!")
+                    errors.add(filename)
+            except queue.Empty:
+                continue
 
 # Function to parse TOC line using regular expressions
 def parse_toc_line(line, next_line=None):
@@ -197,8 +268,6 @@ def process_txt_files_in_directory(directory):
             for entry in toc_entries:
                 page_number = entry['page_number'] if entry['page_number'] is not None else ''
                 toc_file.write(f"{entry['heading']} ...... {page_number}\n")
-        
-        print(f"\nProcessed {txt_file} - TOC saved.")
     print("#"*100)
 
 # New function to process custom PDFs directly, without altering the existing file-based workflow

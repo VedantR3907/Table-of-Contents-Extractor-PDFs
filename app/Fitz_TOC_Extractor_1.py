@@ -1,6 +1,10 @@
 import fitz  # PyMuPDF
 import os
 import re
+from rich.console import Console
+from rich.table import Table
+from rich import box
+from datetime import datetime
 
 def extract_pdf_toc(pdf_path):
     doc = fitz.open(pdf_path)
@@ -66,22 +70,28 @@ def calculate_offset(pdf_path, header_height=70, footer_height=50):
 def process_pdfs(data_folder, output_folder, header_height, footer_height, remove_negative_pages=False, callback=None):
     """
     Process all PDFs in the data folder, adjust TOC page numbers, and save to output folder.
-    Parameters:
-    - data_folder: Folder containing PDF files
-    - output_folder: Folder where TOC files will be saved
-    - remove_negative_pages: Boolean indicating whether to remove TOC entries with negative page numbers
-    - header_height: Height of the header area to extract text from (default is 70 points)
-    - footer_height: Height of the footer area to extract text from (default is 50 points)
-    - callback: Optional function to call with the PDF filename, TOC status, and offset ("N/A" or "No TOC" or offset value)
     """
     os.makedirs(output_folder, exist_ok=True)
+    console = Console()
 
-    print("=" * 60)
-    print("| {:<5} | {:<40} | {:<8} |".format("Index", "Filename", "Offset"))
-    print("=" * 60)
+    # Create rich table
+    table = Table(
+        show_header=True,
+        header_style="bold cyan",
+        box=box.ROUNDED,
+        title="[bold yellow]PDF TOC Processing Results",
+        title_justify="center"
+    )
+    
+    # Add columns
+    table.add_column("Index", style="dim", width=6, justify="right")
+    table.add_column("Filename", style="bold", width=40)
+    table.add_column("Status", justify="center", width=12)
 
+    # Print initial separator
+    console.print("\n")
+    
     index = 1
-
     for filename in os.listdir(data_folder):
         if filename.endswith(".pdf"):
             pdf_path = os.path.join(data_folder, filename)
@@ -99,27 +109,38 @@ def process_pdfs(data_folder, output_folder, header_height, footer_height, remov
                         adjusted_toc.append((level, title, adjusted_page_number))
                     
                     write_toc_to_file(adjusted_toc, output_file)
-                    print("| {:<5} | {:<40} | {:<8} |".format(index, filename, offset))
+                    table.add_row(
+                        str(index),
+                        filename,
+                        f"[green]Offset: {offset}[/]"
+                    )
 
-                    # Callback for non-zero offset
                     if callback:
                         callback(filename, "TOC found", offset)
-
                 else:
                     write_toc_to_file(toc, output_file)
-                    print("| {:<5} | {:<40} | {:<8} |".format(index, filename, 0))
+                    table.add_row(
+                        str(index),
+                        filename,
+                        "[blue]Offset: 0[/]"
+                    )
 
-                    # Callback for zero offset
                     if callback:
                         callback(filename, "TOC found", 0)
             else:
-                print("| {:<5} | {:<40} | {:<8} |".format(index, filename, "No TOC"))
+                table.add_row(
+                    str(index),
+                    filename,
+                    "[yellow]No TOC[/]"
+                )
                 if callback:
                     callback(filename, "No TOC", 0)
 
             index += 1
 
-    print("=" * 60)
+    # Print the final table
+    console.print(table)
+    console.print("\n")
 
 # Example usage
 if __name__ == "__main__":
