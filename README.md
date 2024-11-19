@@ -56,7 +56,7 @@ pip install -r requirements.txt
    ```
 
 3. **View the Output**:  
-   The results will be saved in the `output` folder with the following structure:
+   The results will be saved in the `output` folder with the following structure (The final_output folder contains the final TOC extracted text files for all PDFs):
    ```
    output/
    ├── 01/                     # Output from the first filter
