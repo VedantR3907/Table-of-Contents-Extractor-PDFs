@@ -95,7 +95,7 @@ def extract_toc_entries_clean(text_content):
 
         if long_lines_count >= 3:
             logging.info(f"Condition met at line {i}: 3 out of 5 lines have more than 10 words.")
-            logging.info(f"Including the 5 lines that triggered the condition in the output.")
+            logging.info("Including the 5 lines that triggered the condition in the output.")
             toc_entries.extend({'heading': l, 'page_number': None} for l in next_five_lines if l.strip())
             logging.info("Stopping further processing.")
             break
