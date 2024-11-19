@@ -1,4 +1,4 @@
-![TOC Extractor](https://github.com/VedantR3907/Table-of-Contents-Extractor-PDFs/blob/main/app/utils/toc.png)
+![TOC Extractor]([https://github.com/VedantR3907/Table-of-Contents-Extractor-PDFs/blob/main/app/utils/toc.png](https://github.com/VedantR3907/Table-of-Contents-Extractor-PDFs/blob/main/app/utils/toc_banner.png))
 
 # TOC Extractor from PDF's
 
