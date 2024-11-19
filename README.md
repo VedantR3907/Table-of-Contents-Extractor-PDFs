@@ -1,4 +1,4 @@
-![Uploading toc.png…]()
+
 
 
 # TOC Extractor from PDF's
