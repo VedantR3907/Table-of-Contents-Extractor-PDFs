@@ -1,4 +1,4 @@
-![TOC Extractor](app/utils/toc.png)
+![TOC Extractor](app/utils/toc_banner.png)
 
 # TOC Extractor from PDF's
 
