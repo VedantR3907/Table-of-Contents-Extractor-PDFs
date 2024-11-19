@@ -12,10 +12,6 @@ For a detailed explanation of how the tool works, refer to the [blog post](https
 
 
 ## Demo Video
-<video width="600" controls>
-    <source src="app/utils/Toc_Extractor_Demo_Video.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
 
 
 ## Installation Guide
