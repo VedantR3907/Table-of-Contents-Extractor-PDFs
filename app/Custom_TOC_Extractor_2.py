@@ -1,6 +1,6 @@
 import pdfplumber
 import re
-from PyPDF2 import PdfReader  # noqa: F401
+# from PyPDF2 import PdfReader  # noqa: F401
 import os
 import queue
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
@@ -190,24 +190,24 @@ def extract_toc_entries(text_content):
     return toc_entries
 
 # Extract bookmarks from the PDF (if available)
-def extract_bookmarks(pdf_path):
-    reader = PdfReader(pdf_path)
-    bookmarks = []
+# def extract_bookmarks(pdf_path):
+#     reader = PdfReader(pdf_path)
+#     bookmarks = []
 
-    def recurse_outline(outline, parent_title=''):
-        for item in outline:
-            if isinstance(item, list):
-                recurse_outline(item, parent_title)
-            else:
-                title = (parent_title + ' ' + item.title).strip()
-                page_number = reader.get_destination_page_number(item) + 1
-                bookmarks.append({'heading': title, 'page_number': page_number})
+#     def recurse_outline(outline, parent_title=''):
+#         for item in outline:
+#             if isinstance(item, list):
+#                 recurse_outline(item, parent_title)
+#             else:
+#                 title = (parent_title + ' ' + item.title).strip()
+#                 page_number = reader.get_destination_page_number(item) + 1
+#                 bookmarks.append({'heading': title, 'page_number': page_number})
     
-    try:
-        recurse_outline(reader.outline)
-    except AttributeError:
-        pass
-    return bookmarks
+#     try:
+#         recurse_outline(reader.outline)
+#     except AttributeError:
+#         pass
+#     return bookmarks
 
 # Extract headings based on patterns in the text
 def extract_headings_from_text(text_pages):
