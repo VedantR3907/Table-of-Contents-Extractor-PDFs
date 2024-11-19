@@ -1,4 +1,4 @@
-![TOC Extractor](app/utils/toc_banner.png)
+![TOC Extractor](app/utils/images_and_videos/toc_banner.png)
 
 # TOC Extractor from PDF's
 
@@ -13,6 +13,7 @@ For a detailed explanation of how the tool works, refer to the [blog post](https
 
 ## Demo Video
 
+[Watch the video](app/utils/images_and_videos/demo_video.html)
 
 ## Installation Guide
 
