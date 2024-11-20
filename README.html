@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TOC Extractor from PDF's</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow: auto;
+        }
+        code {
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            background-color: #f6f8fa;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #e1e4e8;
+            margin: 24px 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        blockquote {
+            border-left: 4px solid #e1e4e8;
+            margin: 0;
+            padding: 0 1em;
+            color: #6a737d;
+        }
+        .video-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        video {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <img src="app/utils/images_and_videos/toc_banner.png" alt="TOC Extractor">
+    
+    <h1>TOC Extractor from PDF's</h1>
+    
+    <h2>Overview</h2>
+    <p>The TOC Extractor is a Python-based tool that extracts the Table of Contents (TOC) from PDF files without relying on machine learning (ML), deep learning (DL), or large language models (LLMs). It uses logical Python code and regex patterns for extraction.</p>
+    <p>For a detailed explanation of how the tool works, refer to the <a href="https://medium.com/@vedantrajpurohit3907/the-toc-extractor-from-pdfs-b42a3df8236a">blog post</a>.</p>
+    
+    <hr>
+    
+    <h2>Demo Video</h2>
+    <div class="video-container">
+        <video controls>
+            <source src="app/utils/images_and_videos/Toc_Extractor_Demo_Video.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    
+    <h2>Installation Guide</h2>
+    <h3>Branches Overview</h3>
+    <p>The repository has two branches for different use cases:</p>
+    <ul>
+        <li><strong><code>main</code> branch</strong>: Contains the core code along with sample PDFs for testing, covering various domains like IT, Finance, and Storybooks.</li>
+        <li><strong><code>TOC_Extactor_without_testing_PDFs</code> branch</strong>: Contains only the core code without sample PDFs, intended for testing with custom PDFs.</li>
+    </ul>
+    
+    <h3>Clone the Repository</h3>
+    <p>Use the following commands to clone the desired branch:</p>
+    
+    <h4>Main Branch (with sample PDFs)</h4>
+    <pre><code>git clone https://github.com/VedantR3907/Table-of-Contents-Extractor-PDFs.git</code></pre>
+    
+    <h4><code>TOC_Extactor_without_testing_PDFs</code> Branch (without sample PDFs)</h4>
+    <pre><code>git clone --branch TOC_Extactor_without_testing_PDFs https://github.com/VedantR3907/Table-of-Contents-Extractor-PDFs.git</code></pre>
+    
+    <h3>Install Dependencies</h3>
+    <p>After cloning, navigate to the project directory and install the required dependencies:</p>
+    <pre><code>pip install -r requirements.txt</code></pre>
+    
+    <hr>
+    
+    <h2>Usage</h2>
+    <ol>
+        <li><strong>Prepare PDF Files</strong>:<br>
+            Place your PDF files in the <code>Data</code> folder located in the main directory of the project.</li>
+        <li><strong>Run the Script</strong>:<br>
+            Navigate to the <code>app</code> folder and execute the main script:
+            <pre><code>cd app
+python main.py</code></pre>
+        </li>
+        <li><strong>View the Output</strong>:<br>
+            The results will be saved in the <code>output</code> folder with the following structure (The final_output folder contains the final TOC extracted text files for all PDFs):
+            <pre><code>output/
+├── 01/                     # Output from the first filter
+├── 02/                     # Output from the second filter
+├── Filters_03/             # Outputs from sub-filters in the third stage
+│   ├── 01/
+│   ├── 02/
+│   ├── 03/
+├── extracted_content/      # Extracted content from the PDFs
+└── Final_output/           # Final TOC text files for each PDF</code></pre>
+        </li>
+    </ol>
+    
+    <blockquote>
+        <p><strong>Note</strong>: Refer to the <a href="https://medium.com/@vedantrajpurohit3907/the-toc-extractor-from-pdfs-b42a3df8236a">blog post</a> for a detailed explanation of these stages.</p>
+    </blockquote>
+    
+    <hr>
+    
+    <h2>Maintenance</h2>
+    <h3>Cleaning Output Folders</h3>
+    <p>To clear all generated outputs, run the following script:</p>
+    <pre><code>cd utils
+python clear_output_folders.py</code></pre>
+    
+    <hr>
+    
+    <h2>Additional Information</h2>
+    <ul>
+        <li>Ensure your Python environment is correctly set up to avoid dependency issues.</li>
+        <li>For issues or contributions, submit them via GitHub.</li>
+    </ul>
+</body>
+</html>
