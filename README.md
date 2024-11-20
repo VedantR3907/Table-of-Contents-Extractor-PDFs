@@ -13,7 +13,7 @@ For a detailed explanation of how the tool works, refer to the [blog post](https
 
 ## Demo Video
 
-[Watch the video](app/utils/images_and_videos/demo_video.html)
+[Watch the video](https://youtu.be/5uJsEpJkgdY)
 
 ## Installation Guide
 
