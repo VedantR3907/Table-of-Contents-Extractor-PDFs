@@ -6,7 +6,7 @@
 
 The TOC Extractor is a Python-based tool that extracts the Table of Contents (TOC) from PDF files without relying on machine learning (ML), deep learning (DL), or large language models (LLMs). It uses logical Python code and regex patterns for extraction.
 
-For a detailed explanation of how the tool works, refer to the [blog post](https://medium.com/@vedantrajpurohit3907/the-toc-extractor-from-pdfs-b42a3df8236a).
+For detailed explanation of how the tool works, refer to the [blog post](https://medium.com/@vedantrajpurohit3907/the-toc-extractor-from-pdfs-b42a3df8236a).
 
 ---
 
